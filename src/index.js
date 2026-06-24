@@ -2,8 +2,6 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "url";
 import { hostname } from "node:os";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
-// Importamos el servidor Bare para poder usar su enrutador
-import createBareServer from "@mercuryworkshop/bare-server-node";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 
@@ -13,11 +11,7 @@ import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
 
-// Inicializamos el servidor Bare
-const bareServer = createBareServer("/bare/");
-
-// Wisp Configuration: Refer to the documentation at https://www.npmjs.com/package/@mercuryworkshop/wisp-js
-
+// Wisp Configuration
 logging.set_level(logging.NONE);
 Object.assign(wisp.options, {
 	allow_udp_streams: false,
@@ -29,25 +23,15 @@ const fastify = Fastify({
 	serverFactory: (handler) => {
 		return createServer()
 			.on("request", (req, res) => {
+				// Cambiado a credentialless y añadido cross-origin para permitir recursos multimedia externos
 				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
-				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-				
-				// Primero dejamos que Bare revise si la petición HTTP le pertenece
-				if (bareServer.shouldRoute(req)) {
-					bareServer.routeRequest(req, res);
-				} else {
-					handler(req, res);
-				}
+				res.setHeader("Cross-Origin-Embedder-Policy", "credentialless");
+				res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+				handler(req, res);
 			})
 			.on("upgrade", (req, socket, head) => {
-				// Aquí conviven ambos sin problemas:
-				if (req.url.endsWith("/wisp/")) {
-					wisp.routeRequest(req, socket, head);
-				} else if (bareServer.shouldRoute(req)) {
-					bareServer.routeWebSocket(req, socket, head);
-				} else {
-					socket.end();
-				}
+				if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
+				else socket.end();
 			});
 	},
 });
@@ -82,8 +66,6 @@ fastify.setNotFoundHandler((res, reply) => {
 fastify.server.on("listening", () => {
 	const address = fastify.server.address();
 
-	// by default we are listening on 0.0.0.0 (every interface)
-	// we just need to list a few
 	console.log("Listening on:");
 	console.log(`\thttp://localhost:${address.port}`);
 	console.log(`\thttp://${hostname()}:${address.port}`);
@@ -104,7 +86,6 @@ function shutdown() {
 }
 
 let port = parseInt(process.env.PORT || "");
-
 if (isNaN(port)) port = 8080;
 
 fastify.listen({
