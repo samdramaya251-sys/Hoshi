@@ -10,6 +10,19 @@ const homeView = document.getElementById("home-view");
 const iframesContainer = document.getElementById("iframes-container");
 const tabsContainer = document.getElementById("tabs-container");
 
+// Función procesadora de texto/búsquedas que faltaba en tu código
+function search(input, template) {
+    try {
+        return new URL(input).toString();
+    } catch (err) {
+        try {
+            const url = new URL(`http://${input}`);
+            if (url.hostname.includes(".")) return url.toString();
+        } catch (err) {}
+        return template.replace("%s", encodeURIComponent(input));
+    }
+}
+
 // Actualizar engine oculto en base al selector dinámico
 if (engineSelector && typeof _CONFIG !== 'undefined') {
     searchEngine.value = _CONFIG.engines[engineSelector.value];
@@ -25,13 +38,11 @@ const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const mainGainNode = audioCtx.createGain();
 mainGainNode.connect(audioCtx.destination);
 
-// Lógica de volumen y mute general
 function updateAudioEngineSettings() {
     const isMuted = document.getElementById('audio-mute-toggle').checked;
     const masterVol = document.getElementById('master-volume').value;
     mainGainNode.gain.setValueAtTime(isMuted ? 0 : masterVol, audioCtx.currentTime);
     
-    // Controlar el volumen de los videos cargados en el fondo
     const bgVideo = document.querySelector('#dynamic-bg video');
     if (bgVideo) {
         const bgVol = document.getElementById('bg-audio-volume').value;
@@ -64,7 +75,6 @@ function playInterfaceSound(type, freqStart, freqEnd, duration) {
     oscillator.stop(audioCtx.currentTime + duration);
 }
 
-// Interceptar Clicks de interfaz
 document.addEventListener('click', (e) => {
     if (e.target.closest('.clickable') || e.target.closest('button') || e.target.closest('a') || e.target.closest('.wall-card')) {
         const clickStyle = document.getElementById('click-sound-type').value;
@@ -74,7 +84,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// Interceptación de tipeo (Keyboard Keyboard / Mechanical / Cyber)
 address.addEventListener('input', () => {
     const typeStyle = document.getElementById('type-sound-type').value;
     if (typeStyle === 'mechanical') {
@@ -262,14 +271,29 @@ function go(url) {
 createNewTab();
 
 // =========================================================================
-// 5. SCRAMJET CORE
+// 5. SCRAMJET CORE & BARE-MUX INITIALIZATION
 // =========================================================================
 const { ScramjetController } = $scramjetLoadController();
 const scramjet = new ScramjetController({
     files: { wasm: "/scram/scramjet.wasm.wasm", all: "/scram/scramjet.all.js", sync: "/scram/scramjet.sync.js" },
 });
 scramjet.init();
+
 const connection = new BareMux.BareMuxConnection("/baremux/worker.js");
+
+// Inicialización del transporte de manera inmediata (Arregla "Bare client not found")
+async function initBareMuxTransport() {
+    try {
+        let wispUrl = (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + "/wisp/";
+        if ((await connection.getTransport()) !== "/libcurl/index.mjs") {
+            await connection.setTransport("/libcurl/index.mjs", [{ websocket: wispUrl }]);
+        }
+        console.log("Transporte Bare-Mux vinculado exitosamente.");
+    } catch(err) {
+        console.error("Error al inyectar el transporte Bare-Mux:", err);
+    }
+}
+initBareMuxTransport();
 
 setTimeout(() => {
     const bootloader = document.getElementById('bootloader');
@@ -288,10 +312,6 @@ form.addEventListener("submit", async (event) => {
     }
 
     const url = search(address.value, searchEngine.value);
-    let wispUrl = (location.protocol === "https:" ? "wss" : "ws") + "://" + location.host + "/wisp/";
-    if ((await connection.getTransport()) !== "/libcurl/index.mjs") {
-        await connection.setTransport("/libcurl/index.mjs", [{ websocket: wispUrl }]);
-    }
 
     const currentTab = tabs.find(t => t.id === activeTabId);
     currentTab.url = address.value;
@@ -368,7 +388,6 @@ function setCustomBg() {
     if(url) applyBackground('image', url);
 }
 
-// Carga de archivo desde el almacenamiento local del dispositivo
 document.getElementById('local-bg-upload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -385,7 +404,6 @@ document.getElementById('local-bg-upload').addEventListener('change', function(e
     reader.readAsDataURL(file);
 });
 
-// Build Grid
 const grid = document.getElementById('wallpaper-grid');
 Object.values(WALLPAPERS).forEach(wp => {
     const card = document.createElement('div');
@@ -401,3 +419,4 @@ Object.values(WALLPAPERS).forEach(wp => {
     const label = document.createElement('div'); label.className = 'label'; label.textContent = wp.name;
     card.appendChild(label); grid.appendChild(card);
 });
+
