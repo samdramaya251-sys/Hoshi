@@ -2,6 +2,8 @@ import { createServer } from "node:http";
 import { fileURLToPath } from "url";
 import { hostname } from "node:os";
 import { server as wisp, logging } from "@mercuryworkshop/wisp-js/server";
+// Importamos el servidor Bare para poder usar su enrutador
+import createBareServer from "@mercuryworkshop/bare-server-node";
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 
@@ -10,6 +12,9 @@ import { libcurlPath } from "@mercuryworkshop/libcurl-transport";
 import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 
 const publicPath = fileURLToPath(new URL("../public/", import.meta.url));
+
+// Inicializamos el servidor Bare
+const bareServer = createBareServer("/bare/");
 
 // Wisp Configuration: Refer to the documentation at https://www.npmjs.com/package/@mercuryworkshop/wisp-js
 
@@ -26,11 +31,23 @@ const fastify = Fastify({
 			.on("request", (req, res) => {
 				res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 				res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
-				handler(req, res);
+				
+				// Primero dejamos que Bare revise si la petición HTTP le pertenece
+				if (bareServer.shouldRoute(req)) {
+					bareServer.routeRequest(req, res);
+				} else {
+					handler(req, res);
+				}
 			})
 			.on("upgrade", (req, socket, head) => {
-				if (req.url.endsWith("/wisp/")) wisp.routeRequest(req, socket, head);
-				else socket.end();
+				// Aquí conviven ambos sin problemas:
+				if (req.url.endsWith("/wisp/")) {
+					wisp.routeRequest(req, socket, head);
+				} else if (bareServer.shouldRoute(req)) {
+					bareServer.routeWebSocket(req, socket, head);
+				} else {
+					socket.end();
+				}
 			});
 	},
 });
