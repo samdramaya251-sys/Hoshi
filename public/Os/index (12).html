@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Kaito OS</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/windows.css">
+</head>
+<body>
+
+  <!-- Wallpaper layer -->
+  <div id="wallpaper"></div>
+  <div id="wallpaper-noise"></div>
+
+  <!-- Boot screen -->
+  <div id="boot-screen">
+    <div class="boot-ring">
+      <div class="boot-ring-inner"></div>
+    </div>
+    <div class="boot-label">KAITO</div>
+  </div>
+
+  <!-- Dynamic Island -->
+  <div id="dynamic-island">
+    <div class="di-collapsed">
+      <span class="di-clock" id="di-clock">--:--</span>
+      <div class="di-divider"></div>
+      <span class="di-status" id="di-status">Kaito OS</span>
+    </div>
+    <div class="di-expanded" id="di-expanded">
+      <div class="di-expanded-content" id="di-expanded-content"></div>
+    </div>
+  </div>
+
+  <!-- Top bar (menu) -->
+  <div id="top-bar">
+    <div class="top-bar-left">
+      <span class="kaito-glyph">◐</span>
+      <span class="active-app-name" id="active-app-name">Finder</span>
+    </div>
+    <div class="top-bar-right">
+      <span class="top-icon" id="control-center-btn">⌁</span>
+      <span class="top-icon" id="spotlight-btn">⌕</span>
+    </div>
+  </div>
+
+  <!-- Desktop / Window layer -->
+  <div id="desktop"></div>
+
+  <!-- Spotlight overlay -->
+  <div id="spotlight-overlay" class="hidden">
+    <div id="spotlight-box">
+      <input type="text" id="spotlight-input" placeholder="Buscar apps, archivos, comandos…" autocomplete="off">
+      <div id="spotlight-results"></div>
+    </div>
+  </div>
+
+  <!-- Control Center -->
+  <div id="control-center" class="hidden">
+    <div class="cc-row cc-toggles">
+      <div class="cc-toggle" data-toggle="wifi"><span class="cc-icon">⌁</span><span>Wi-Fi</span></div>
+      <div class="cc-toggle active" data-toggle="dnd"><span class="cc-icon">☾</span><span>No molestar</span></div>
+    </div>
+    <div class="cc-row cc-slider-row">
+      <span class="cc-icon">☼</span>
+      <input type="range" id="brightness-slider" min="20" max="100" value="100">
+    </div>
+    <div class="cc-row cc-slider-row">
+      <span class="cc-icon">♪</span>
+      <input type="range" id="volume-slider" min="0" max="100" value="60">
+    </div>
+  </div>
+
+  <!-- Dock -->
+  <div id="dock-wrapper">
+    <div id="dock"></div>
+  </div>
+
+  <!-- Notification layer -->
+  <div id="notification-stack"></div>
+
+  <script src="js/filesystem.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/dock.js"></script>
+  <script src="js/spotlight.js"></script>
+  <script src="js/dynamic-island.js"></script>
+  <script src="js/control-center.js"></script>
+  <script src="js/apps/finder.js"></script>
+  <script src="js/apps/notes.js"></script>
+  <script src="js/apps/terminal.js"></script>
+  <script src="js/apps/calculator.js"></script>
+  <script src="js/apps/clock.js"></script>
+  <script src="js/apps/settings.js"></script>
+  <script src="js/apps/gallery.js"></script>
+  <script src="js/apps/store.js"></script>
+  <script src="js/apps/chat.js"></script>
+  <script src="js/apps/chromo.js"></script>
+  <script src="js/apps/browser.js"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
